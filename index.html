@@ -6,85 +6,75 @@
 <title>뱀파이어 저택 미로</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #000;
-    color: #f1d9de;
-    font-family: "Apple SD Gothic Neo","Noto Sans KR","Pretendard",sans-serif;
-    text-align: center;
-  }
-
-  button, a {
-    background: #7a1f2b;
-    color: #000;
-    padding: 14px 28px;
-    border-radius: 14px;
-    border: none;
-    font-size: 16px;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  input {
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: none;
-    font-size: 15px;
-    width: 220px;
-    margin-top: 18px;
-    text-align: center;
-  }
-
-  .screen {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 24px;
-  }
-
-  .narration {
-    max-width: 420px;
-    font-size: 18px;
-    line-height: 1.8;
-    white-space: pre-line;
-    margin-bottom: 18px;
-  }
-
-  .maze {
-    display: grid;
-    gap: 2px;
-    justify-content: center;
-  }
-
-  .cell {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-
-  .wall { background: #2a0006; }
-  .path { background: #111; }
-
-  .controls {
-    margin-top: 16px;
-    display: grid;
-    grid-template-columns: repeat(3, 36px);
-    gap: 6px;
-    justify-content: center;
-  }
-
-  .controls button {
-    padding: 0;
-    width: 36px;
-    height: 28px;
-    font-size: 14px;
-    border-radius: 8px;
-  }
+body{
+  margin:0;
+  background:#000;
+  color:#f1d9de;
+  font-family:"Apple SD Gothic Neo","Noto Sans KR","Pretendard",sans-serif;
+  text-align:center;
+}
+button,a{
+  background:#7a1f2b;
+  color:#000;
+  padding:14px 28px;
+  border-radius:14px;
+  border:none;
+  font-size:16px;
+  font-weight:600;
+  text-decoration:none;
+}
+input{
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  font-size:15px;
+  width:220px;
+  margin-top:18px;
+  text-align:center;
+}
+.screen{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  padding:24px;
+}
+.narration{
+  max-width:420px;
+  font-size:18px;
+  line-height:1.8;
+  white-space:pre-line;
+}
+.maze{
+  display:grid;
+  gap:2px;
+}
+.cell{
+  width:28px;height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.wall{background:#2a0006;}
+.path{background:#111;}
+.controls{
+  margin-top:16px;
+  display:grid;
+  grid-template-columns:repeat(3,36px);
+  gap:6px;
+}
+.controls button{
+  padding:0;
+  width:36px;
+  height:28px;
+  font-size:14px;
+}
+.rank{
+  margin-top:24px;
+  font-size:14px;
+  line-height:1.6;
+}
 </style>
 </head>
 
@@ -92,11 +82,11 @@
 <div id="app"></div>
 
 <script>
-const GRID = 11;
-const START = {x:0,y:10};
-const GOAL = {x:10,y:0};
+const GRID=11;
+const START={x:0,y:10};
+const GOAL={x:10,y:0};
 
-const MAZE = [
+const MAZE=[
  [1,1,1,1,1,1,1,1,1,1,0],
  [1,0,0,0,1,0,0,0,0,1,0],
  [1,0,1,0,1,0,1,1,0,1,0],
@@ -110,93 +100,62 @@ const MAZE = [
  [0,0,1,1,1,1,1,1,1,1,1],
 ];
 
-const narration =
-"태초의 뱀파이어를 방문하게 된 당신,\n" +
-"하지만 저택은 생각보다 외진 곳에 있는데...\n" +
+const narration=
+"태초의 뱀파이어를 방문하게 된 당신,\n"+
+"하지만 저택은 생각보다 외진 곳에 있는데...\n"+
 "과연 시간 내에 길을 찾아갈 수 있을까?";
 
-let stage = "intro";
-let text = "";
-let i = 0;
-let nickname = "";
-let showButton = false;
+let stage="intro",text="",i=0;
+let nickname="",showButton=false;
+let pos={...START};
+let startTime=0,elapsed=0;
 
-let pos = {...START};
-let startTime = 0;
+const app=document.getElementById("app");
 
-const app = document.getElementById("app");
-
-/* ---------- INTRO ---------- */
+/* INTRO */
 function renderIntro(){
-  app.innerHTML = `
-    <div class="screen">
-      <div class="narration">${text}</div>
-
-      ${text.length === narration.length ? `
-        <input
-          id="nicknameInput"
-          placeholder="닉네임 입력하기"
-          value="${nickname}"
-        />
-
-        ${showButton ? `
-          <button style="margin-top:18px" id="startBtn">
-            저택으로 향하기
-          </button>
-        ` : ``}
-      ` : ``}
-    </div>
-  `;
-
-  const input = document.getElementById("nicknameInput");
-  if(input){
-    input.focus();
-    input.addEventListener("keydown", e => {
-      if(e.key === "Enter"){
-        nickname = input.value.trim();
-        if(nickname){
-          showButton = true;
-          renderIntro();
-        }
+  app.innerHTML=`
+  <div class="screen">
+    <div class="narration">${text}</div>
+    ${text.length===narration.length?`
+      <input id="nick" placeholder="닉네임 입력하기"/>
+      ${showButton?`<button id="go" style="margin-top:18px">저택으로 향하기</button>`:""}
+    `:""}
+  </div>`;
+  const nick=document.getElementById("nick");
+  if(nick){
+    nick.focus();
+    nick.onkeydown=e=>{
+      if(e.key==="Enter"&&nick.value.trim()){
+        nickname=nick.value.trim();
+        showButton=true;
+        renderIntro();
       }
-    });
+    }
   }
-
-  const btn = document.getElementById("startBtn");
-  if(btn){
-    btn.addEventListener("click", startGame);
-  }
+  const go=document.getElementById("go");
+  if(go) go.onclick=startGame;
 }
 
-/* ---------- MAZE ---------- */
+/* MAZE */
 function renderMaze(){
-  let html = `<div class="screen">
-    <div class="maze" style="grid-template-columns:repeat(${GRID},28px)">`;
-
+  let html=`<div class="screen">
+  <div class="maze" style="grid-template-columns:repeat(${GRID},28px)">`;
   for(let y=0;y<GRID;y++){
     for(let x=0;x<GRID;x++){
       let c="";
-      if(pos.x===x && pos.y===y) c="👧";
-      if(GOAL.x===x && GOAL.y===y) c="🏰";
-      html += `<div class="cell ${MAZE[y][x]?"wall":"path"}">${c}</div>`;
+      if(pos.x===x&&pos.y===y)c="👧";
+      if(x===GOAL.x&&y===GOAL.y)c="🏰";
+      html+=`<div class="cell ${MAZE[y][x]?"wall":"path"}">${c}</div>`;
     }
   }
-
-  html += `</div>
-    <div class="controls">
-      <div></div><button onclick="move(0,-1)">▲</button><div></div>
-      <button onclick="move(-1,0)">◀</button><div></div><button onclick="move(1,0)">▶</button>
-      <div></div><button onclick="move(0,1)">▼</button><div></div>
-    </div>
-  </div>`;
-
-  app.innerHTML = html;
-}
-
-function startGame(){
-  stage = "maze";
-  startTime = Date.now();
-  renderMaze();
+  html+=`</div>
+  <div class="controls">
+    <div></div><button onclick="move(0,-1)">▲</button><div></div>
+    <button onclick="move(-1,0)">◀</button><div></div><button onclick="move(1,0)">▶</button>
+    <div></div><button onclick="move(0,1)">▼</button><div></div>
+  </div></div>`;
+  app.innerHTML=html;
 }
 
 function move(dx,dy){
@@ -204,13 +163,64 @@ function move(dx,dy){
   if(nx<0||ny<0||nx>=GRID||ny>=GRID) return;
   if(MAZE[ny][nx]) return;
   pos={x:nx,y:ny};
+
+  if(nx===GOAL.x&&ny===GOAL.y){
+    elapsed=Math.floor((Date.now()-startTime)/1000);
+    saveRanking();
+    renderResult();
+    return;
+  }
   renderMaze();
 }
 
-/* ---------- TYPEWRITER ---------- */
-const timer = setInterval(()=>{
-  if(i < narration.length){
-    text += narration[i++];
+/* RESULT */
+function saveRanking(){
+  const list=JSON.parse(localStorage.getItem("vampireRank")||"[]");
+  list.push({name:nickname,time:elapsed});
+  list.sort((a,b)=>a.time-b.time);
+  localStorage.setItem("vampireRank",JSON.stringify(list.slice(0,5)));
+}
+
+function renderResult(){
+  const list=JSON.parse(localStorage.getItem("vampireRank")||"[]");
+  app.innerHTML=`
+  <div class="screen">
+    <div class="narration">
+      ${nickname}님은<br/>
+      ${elapsed}초 만에<br/>
+      저택에 도착했습니다.
+    </div>
+
+    <div class="rank">
+      <strong>🏆 방문자 랭킹</strong><br/>
+      ${list.map((r,i)=>`${i+1}위 · ${r.name} (${r.time}초)`).join("<br/>")}
+    </div>
+
+    <div class="narration" style="margin-top:24px;font-size:15px">
+      무사히 뱀파이어의 저택을 방문하고 나서<br/>
+      벌어지는 일이 궁금하다면?<br/>
+      <strong>연극 &lt;뱀파이어를 이해하는 특별한 방법&gt;</strong><br/>
+      많은 관심 부탁드립니다.
+    </div>
+
+    <a href="https://tickets.interpark.com/goods/26000875"
+       target="_blank"
+       style="margin-top:22px">
+       티켓 오픈 사이트 바로가기
+    </a>
+  </div>`;
+}
+
+/* START */
+function startGame(){
+  stage="maze";
+  startTime=Date.now();
+  renderMaze();
+}
+
+const timer=setInterval(()=>{
+  if(i<narration.length){
+    text+=narration[i++];
     renderIntro();
   } else clearInterval(timer);
 },40);
