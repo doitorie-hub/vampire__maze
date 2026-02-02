@@ -25,6 +25,15 @@
     text-decoration: none;
   }
 
+  input {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    margin-top: 16px;
+    font-size: 14px;
+    text-align: center;
+  }
+
   .screen {
     min-height: 100vh;
     display: flex;
@@ -39,7 +48,7 @@
     font-size: 18px;
     line-height: 1.7;
     white-space: pre-line;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .title {
@@ -53,7 +62,7 @@
     font-size: 15px;
     line-height: 1.7;
     color: #d6b8be;
-    margin-top: 10px;
+    margin-top: 8px;
   }
 
   .maze {
@@ -100,12 +109,8 @@ const MAZE = [
  [0,0,1,1,1,1,1,1,1,1,1],
 ];
 
-// 🔥 함정 위치 (정답 루트 제외 / 기존 위치 그대로)
 const TRAPS = [
-  {x:5,y:9},
-  {x:7,y:3},
-  {x:6,y:4},
-  {x:3,y:1}
+  {x:5,y:9},{x:7,y:3},{x:6,y:4},{x:3,y:1}
 ];
 
 const narration =
@@ -114,6 +119,7 @@ const narration =
 "과연 시간 내에 길을 찾아갈 수 있을까?";
 
 let stage="intro", text="", i=0;
+let nickname="";
 let pos={...START}, startTime=0, elapsed=0;
 let trapCount=0;
 let revealed=[];
@@ -124,11 +130,21 @@ function renderIntro(){
   app.innerHTML=`
     <div class="screen">
       <div class="narration">${text}</div>
-      ${text.length===narration.length
-        ? `<button onclick="startGame()">저택으로 가기</button>`
-        : ""}
+
+      ${text.length===narration.length ? `
+        <input id="nick" placeholder="닉네임 입력하기"
+          onkeydown="if(event.key==='Enter')confirmNick()" />
+        ${nickname ? `<button onclick="startGame()">저택으로 가기</button>` : ``}
+      ` : ``}
     </div>
   `;
+}
+
+function confirmNick(){
+  const v=document.getElementById("nick").value.trim();
+  if(!v) return;
+  nickname=v;
+  renderIntro();
 }
 
 function renderMaze(){
@@ -141,13 +157,12 @@ function renderMaze(){
       if(pos.x===x&&pos.y===y) c="👧";
       if(GOAL.x===x&&GOAL.y===y) c="🏰";
       if(revealed.includes(x+","+y)) c="🧛‍♀️";
-
       html+=`<div class="cell ${MAZE[y][x]?"wall":"path"}">${c}</div>`;
     }
   }
 
   html+=`</div>
-    <div style="margin-top:14px">
+    <div style="margin-top:12px">
       <button onclick="move(0,-1)">▲</button><br/>
       <button onclick="move(-1,0)">◀</button>
       <button onclick="move(1,0)">▶</button><br/>
@@ -159,11 +174,22 @@ function renderMaze(){
 }
 
 function renderResult(){
+  saveRanking();
+
+  const list=getRanking()
+    .slice(0,5)
+    .map((r,i)=>`<div>${i+1}. ${r.name} · ${r.time}초</div>`)
+    .join("");
+
   app.innerHTML=`
     <div class="screen">
       <div class="title">저택에 도착하셨습니다</div>
       <div class="desc">소요 시간: ${elapsed}초</div>
       <div class="desc">함정 밟은 횟수: ${trapCount}</div>
+
+      <div class="desc" style="margin-top:16px">
+        <strong>🏆 랭킹</strong><br/>${list}
+      </div>
 
       <div class="desc" style="margin-top:20px">
         무사히 뱀파이어의 저택을 방문하고 나서<br/>
@@ -181,6 +207,17 @@ function renderResult(){
   `;
 }
 
+function saveRanking(){
+  const data=getRanking();
+  data.push({name:nickname,time:elapsed});
+  data.sort((a,b)=>a.time-b.time);
+  localStorage.setItem("vampireRank",JSON.stringify(data));
+}
+
+function getRanking(){
+  return JSON.parse(localStorage.getItem("vampireRank")||"[]");
+}
+
 function move(dx,dy){
   let nx=pos.x+dx, ny=pos.y+dy;
   if(nx<0||ny<0||nx>=GRID||ny>=GRID) return;
@@ -192,7 +229,6 @@ function move(dx,dy){
     pos={x:nx,y:ny};
     trapCount++;
     renderMaze();
-
     setTimeout(()=>{
       pos={...START};
       revealed=[];
@@ -233,6 +269,7 @@ renderIntro();
 </script>
 </body>
 </html>
+
 
 
 
