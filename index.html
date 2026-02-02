@@ -25,6 +25,16 @@
     text-decoration: none;
   }
 
+  input {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    width: 220px;
+    margin-top: 18px;
+    text-align: center;
+  }
+
   .screen {
     min-height: 100vh;
     display: flex;
@@ -39,7 +49,7 @@
     font-size: 18px;
     line-height: 1.8;
     white-space: pre-line;
-    margin-bottom: 28px;
+    margin-bottom: 18px;
   }
 
   .title {
@@ -80,7 +90,6 @@
   .wall { background: #2a0006; }
   .path { background: #111; }
 
-  /* 🔽 화살표 버튼 정리 */
   .controls {
     margin-top: 16px;
     display: grid;
@@ -95,6 +104,12 @@
     height: 28px;
     font-size: 14px;
     border-radius: 8px;
+  }
+
+  .rank {
+    margin-top: 18px;
+    font-size: 14px;
+    line-height: 1.6;
   }
 </style>
 </head>
@@ -132,6 +147,7 @@ const narration =
 "과연 시간 내에 길을 찾아갈 수 있을까?";
 
 let stage="intro", text="", i=0;
+let nickname="";
 let pos={...START}, startTime=0, elapsed=0, trapCount=0;
 let revealed=[];
 
@@ -141,9 +157,13 @@ function renderIntro(){
   app.innerHTML=`
     <div class="screen">
       <div class="narration">${text}</div>
-      ${text.length===narration.length
-        ? `<button onclick="startGame()">저택으로 가기</button>`
-        : ""}
+
+      ${text.length===narration.length ? `
+        <input placeholder="닉네임 입력하기"
+               value="${nickname}"
+               oninput="nickname=this.value.trim()" />
+        ${nickname ? `<button style="margin-top:18px" onclick="startGame()">저택으로 가기</button>` : ""}
+      ` : ""}
     </div>
   `;
 }
@@ -164,49 +184,47 @@ function renderMaze(){
 
   html+=`</div>
     <div class="controls">
-      <div></div>
-      <button onclick="move(0,-1)">▲</button>
-      <div></div>
-      <button onclick="move(-1,0)">◀</button>
-      <div></div>
-      <button onclick="move(1,0)">▶</button>
-      <div></div>
-      <button onclick="move(0,1)">▼</button>
-      <div></div>
+      <div></div><button onclick="move(0,-1)">▲</button><div></div>
+      <button onclick="move(-1,0)">◀</button><div></div><button onclick="move(1,0)">▶</button>
+      <div></div><button onclick="move(0,1)">▼</button><div></div>
     </div>
   </div>`;
 
   app.innerHTML=html;
 }
 
+function saveRanking(){
+  const list = JSON.parse(localStorage.getItem("vampireRank")||"[]");
+  list.push({name:nickname,time:elapsed,traps:trapCount});
+  list.sort((a,b)=>a.time-b.time || a.traps-b.traps);
+  localStorage.setItem("vampireRank",JSON.stringify(list.slice(0,5)));
+  return list.slice(0,5);
+}
+
 function renderResult(){
+  const ranks = saveRanking();
   app.innerHTML=`
     <div class="screen">
       <div class="title">저택에 도착하셨습니다</div>
 
-      <div class="desc">
-        소요 시간<br/>
-        <strong>${elapsed}초</strong>
-      </div>
+      <div class="desc">플레이어<br/><strong>${nickname}</strong></div>
+      <div class="desc">소요 시간<br/><strong>${elapsed}초</strong></div>
+      <div class="desc">함정에 걸린 횟수<br/><strong>${trapCount}회</strong></div>
 
-      <div class="desc">
-        함정에 걸린 횟수<br/>
-        <strong>${trapCount}회</strong>
+      <div class="rank">
+        <strong>🏆 랭킹 TOP 5</strong><br/>
+        ${ranks.map((r,i)=>`${i+1}위 · ${r.name} (${r.time}초 / ${r.traps}회)`).join("<br/>")}
       </div>
 
       <div class="desc" style="margin-top:24px">
-        무사히 뱀파이어의 저택을 방문한 뒤,<br/>
-        그 이후의 이야기가 궁금하다면
-      </div>
-
-      <div class="desc">
-        <strong>연극 &lt;뱀파이어를 이해하는 특별한 방법&gt;</strong><br/>
+        연극<br/>
+        <strong>&lt;뱀파이어를 이해하는 특별한 방법&gt;</strong><br/>
         많은 관심 부탁드립니다.
       </div>
 
       <a href="https://tickets.interpark.com/goods/26000875"
          target="_blank"
-         style="margin-top:24px">
+         style="margin-top:22px">
         티켓 오픈 사이트 바로가기
       </a>
     </div>
